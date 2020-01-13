@@ -1,0 +1,60 @@
+#coding = utf-8
+import unittest
+# 把case目录添加到path下
+import sys, time, os
+from email import encoders
+from email.header import Header
+from email.mime.base import MIMEBase
+sys.path.append("\case")
+# 导入测试文件
+import HTMLTestRunner
+import agt_login
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+
+
+# 定义一个单元测试容器
+testunit = unittest.TestSuite()
+testunit.addTests(unittest.makeSuite(agt_login.Login))
+ # 取现在时间
+now = time.strftime("%Y-%m-%d %H_%M_%S", time.localtime(time.time()))
+# 测试报告存放位置
+filename1 = "D:\\TEST\\python\\studey\\qwk_APP\\" + now + 'result2.html'
+
+fp = open(filename1, "wb")
+runner = HTMLTestRunner.HTMLTestRunner(
+    stream=fp,
+    title=u"钱微客后台",
+    description=u"用例执行情况：")
+# 运行测试用例
+runner.run(testunit)
+
+# 截取文件名
+f = filename1
+pathf = os.path.dirname(f)
+print(pathf)
+fileName = f[len(pathf)+1:]
+print(fileName)
+
+# 发送邮件
+mailserver = 'smtp.qq.com'
+userName_SendMail = 'chauriqi@foxmail.com'  # 发件人
+userName_AuthCode = 'ucvgkslstsenbhdh'  # 授权码
+received_mail = ['zharuiqi@omlife.com.cn', '501924111@qq.com']  # 收件人
+email = MIMEMultipart()
+email['subject'] = '邮件主题'  # 定义邮件主题
+email['From'] = userName_SendMail  # 发件人
+email['To'] = ",".join(received_mail)  # 收件人
+print(email['To'])
+att = MIMEBase('application', 'octet-stream')
+att.set_payload(open(filename1, 'rb').read())
+att.add_header('Content-Disposition', 'attachment', filename=Header(fileName, 'gbk').encode())
+encoders.encode_base64(att)
+email.attach(att)
+smtp = smtplib.SMTP_SSL(mailserver, port=465)
+smtp.login(userName_SendMail, userName_AuthCode)
+smtp.sendmail(email["from"], email["to"].split(','), email.as_string())
+# smtp.sendmail(userName_SendMail, ','.join(received_mail), email.as_string())
+smtp.quit()
